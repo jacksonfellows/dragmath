@@ -1,9 +1,19 @@
 let sampleEqn = ['=', ['*', [-1, 'd'], [1, ['+', [1, 'a'], [1, ['*', [1, 'x'], [1, 'z']]], [-1, 'f']]]], ['+', [1, 'c'], [1, '5']]];
 
+const prettyOps = {
+	'+': '&plus;',
+	'-': '&minus;',
+	'*': '&middot;',
+	'=': '&equals;'
+};
+
 function renderOp(op) {
 	let e = document.createElement('span');
 	e.className = 'op';
-	e.innerText = op;
+	if (op in prettyOps)
+		e.innerHTML = prettyOps[op];
+	else
+		e.innerText = op;
 	return e;
 }
 
@@ -71,10 +81,12 @@ function renderExpr(expr, level, side) {
 		} else if (op == '*') {
 			let numerator = document.createElement('span');
 			let denominator = document.createElement('span');
+			let numNumerator = expr.slice(1).map(e => e[0] == 1).reduce((a,b)=>a+b);
+			let numDenominator = expr.length - 1 - numNumerator;
 			for (let i = 1; i < expr.length; i++) {
 				let [coef, childExpr] = expr[i];
 				console.assert(coef == 1 || coef == -1);
-				let child = wrapIf(renderExpr(childExpr, level + 1), Array.isArray(childExpr) && childExpr[0] == '+');				
+				let child = renderExpr(childExpr, level + 1);				
 				if (level == 1) {
 					child.draggable = true;
 					child.ondragstart = (ev) => {
@@ -85,11 +97,15 @@ function renderExpr(expr, level, side) {
 					if (numerator.children.length > 0) {
 						numerator.appendChild(renderOp('*'));
 					}
-					numerator.appendChild(child);
+					numerator.appendChild(wrapIf(child, numNumerator > 1 && Array.isArray(childExpr) && childExpr[0] == '+'));
 				} else if (coef == -1) {
-					denominator.appendChild(child);
+					if (denominator.children.length > 0) {
+						denominator.appendChild(renderOp('*'));
+					}
+					denominator.appendChild(wrapIf(child, numDenominator > 1 && Array.isArray(childExpr) && childExpr[0] == '+'));
 				}
 			}
+			
 			if (numerator.children.length == 0) {
 				return makeFrac(renderAtom(1), denominator);
 			} else if (denominator.children.length == 0) {
@@ -101,6 +117,10 @@ function renderExpr(expr, level, side) {
 	} else {
 		return renderAtom(expr);
 	}
+}
+
+function isNumber(x) {
+	return typeof(x) == 'number';
 }
 
 function simplifyExpr(expr) {
@@ -134,8 +154,68 @@ function simplifyExpr(expr) {
 	}
 }
 
+function simplifyIdentities(expr) {
+	if (Array.isArray(expr)) {
+		let simplified = [expr[0]];
+		for (let i = 1; i < expr.length; i++) {
+			let [coef,childExpr] = expr[i];
+			childExpr = simplifyIdentities(childExpr);
+			if (expr[0] == '*' && isNumber(childExpr) && childExpr == 1) {
+				// pass
+			} else if (expr[0] == '*' && isNumber(childExpr) && childExpr == -1) {
+				simplified.push([1,-1]);
+			} else {
+				simplified.push([coef,childExpr]);
+			}
+		}
+		return simplified;
+	} else {
+		return expr;
+	}
+}
+
+function flattenExpr(expr) {
+	if (Array.isArray(expr)) {
+		let flattened = [expr[0]];
+		for (let i = 1; i < expr.length; i++) {
+			let [coef,childExpr] = expr[i];
+			childExpr = flattenExpr(childExpr);
+			if (Array.isArray(childExpr) && expr[0] == childExpr[0]) {
+				flattened.push(...childExpr.slice(1).map(x => [coef*x[0],x[1]]));
+			} else {
+				flattened.push([coef,childExpr]);
+			}
+		}
+		return flattened;
+	} else {
+		return expr;
+	}
+}
+
+function exprEquals(a, b) {
+	if (typeof(a) != typeof(b))
+		return false;
+	if (!Array.isArray(a))
+		return a == b;
+	if (a.length != b.length)
+		return false;
+	for (let i = 0; i < a.length; i++)
+		if (!exprEquals(a[i], b[i]))
+			return false;
+	return true;
+}
+
+function simplifyExprFixpoint(expr) {
+	let expr_ = flattenExpr(simplifyIdentities(simplifyExpr(expr)));
+	if (exprEquals(expr, expr_)) {
+		return expr;
+	} else {
+		return simplifyExprFixpoint(expr_);
+	}
+}
+
 function simplify(eqn) {
-	return ['=', simplifyExpr(eqn[1]), simplifyExpr(eqn[2])];
+	return ['=', simplifyExprFixpoint(eqn[1]), simplifyExprFixpoint(eqn[2])];
 }
 
 function move(eqn, srcSide, srcElem, dstSide) {
