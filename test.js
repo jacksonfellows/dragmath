@@ -58,18 +58,18 @@ function makeFrac(numerator, denominator) {
 function renderExpr(expr, level, side) {
 	if (Array.isArray(expr)) {
 		let op = expr[0];
-		if (op == '+') {
+		if (op === '+') {
 			let e = document.createElement('span');
 			for (let i = 1; i < expr.length; i++) {
 				let [coef, childExpr] = expr[i];
-				console.assert(coef == 1 || coef == -1);
-				if (coef == -1) {
+				console.assert(coef === 1 || coef === -1);
+				if (coef === -1) {
 					e.appendChild(renderOp('-'));
-				} else if (i != 1) {
+				} else if (i !== 1) {
 					e.appendChild(renderOp('+'));
 				}
 				let child = renderExpr(childExpr, level + 1);
-				if (level == 1) {
+				if (level === 1) {
 					child.draggable = true;
 					child.ondragstart = (ev) => {
 						ev.dataTransfer.setData('text/plain', side + ' ' + i);
@@ -78,37 +78,37 @@ function renderExpr(expr, level, side) {
 				e.appendChild(child);
 			}
 			return e;
-		} else if (op == '*') {
+		} else if (op === '*') {
 			let numerator = document.createElement('span');
 			let denominator = document.createElement('span');
-			let numNumerator = expr.slice(1).map(e => e[0] == 1).reduce((a,b)=>a+b);
+			let numNumerator = expr.slice(1).map(e => e[0] === 1).reduce((a,b)=>a+b);
 			let numDenominator = expr.length - 1 - numNumerator;
 			for (let i = 1; i < expr.length; i++) {
 				let [coef, childExpr] = expr[i];
-				console.assert(coef == 1 || coef == -1);
+				console.assert(coef === 1 || coef === -1);
 				let child = renderExpr(childExpr, level + 1);				
-				if (level == 1) {
+				if (level === 1) {
 					child.draggable = true;
 					child.ondragstart = (ev) => {
 						ev.dataTransfer.setData('text/plain', side + ' ' + i);
 					};
 				}
-				if (coef == 1) {
+				if (coef === 1) {
 					if (numerator.children.length > 0) {
 						numerator.appendChild(renderOp('*'));
 					}
-					numerator.appendChild(wrapIf(child, numNumerator > 1 && Array.isArray(childExpr) && childExpr[0] == '+'));
-				} else if (coef == -1) {
+					numerator.appendChild(wrapIf(child, numNumerator > 1 && Array.isArray(childExpr) && childExpr[0] === '+'));
+				} else if (coef === -1) {
 					if (denominator.children.length > 0) {
 						denominator.appendChild(renderOp('*'));
 					}
-					denominator.appendChild(wrapIf(child, numDenominator > 1 && Array.isArray(childExpr) && childExpr[0] == '+'));
+					denominator.appendChild(wrapIf(child, numDenominator > 1 && Array.isArray(childExpr) && childExpr[0] === '+'));
 				}
 			}
 			
-			if (numerator.children.length == 0) {
+			if (numerator.children.length === 0) {
 				return makeFrac(renderAtom(1), denominator);
-			} else if (denominator.children.length == 0) {
+			} else if (denominator.children.length === 0) {
 				return numerator;
 			} else {
 				return makeFrac(numerator, denominator);
@@ -120,23 +120,23 @@ function renderExpr(expr, level, side) {
 }
 
 function isNumber(x) {
-	return typeof(x) == 'number';
+	return typeof(x) === 'number';
 }
 
 function simplifyExpr(expr) {
 	if (Array.isArray(expr)) {
-		console.assert(expr[0] == '+' || expr[0] == '*', expr);
-		if (expr.length == 1) {
-			if (expr[0] == '+') {
+		console.assert(expr[0] === '+' || expr[0] === '*', expr);
+		if (expr.length === 1) {
+			if (expr[0] === '+') {
 				return 0;
-			} else if (expr[0] == '*') {
+			} else if (expr[0] === '*') {
 				return 1;
 			}
-		} else if (expr.length == 2) {
+		} else if (expr.length === 2) {
 			let [coef,childExpr] = expr[1];
-			if (coef == 1) {
+			if (coef === 1) {
 				return simplifyExpr(childExpr);
-			} else if (expr[0] == '+' && coef == -1) {
+			} else if (expr[0] === '+' && coef === -1) {
 				return ['*', [1,-1], [1,simplifyExpr(childExpr)]];
 			} else {
 				return [expr[0], [coef,simplifyExpr(childExpr)]];
@@ -160,9 +160,9 @@ function simplifyIdentities(expr) {
 		for (let i = 1; i < expr.length; i++) {
 			let [coef,childExpr] = expr[i];
 			childExpr = simplifyIdentities(childExpr);
-			if (expr[0] == '*' && isNumber(childExpr) && childExpr == 1) {
+			if (expr[0] === '*' && isNumber(childExpr) && childExpr === 1) {
 				// pass
-			} else if (expr[0] == '*' && isNumber(childExpr) && childExpr == -1) {
+			} else if (expr[0] === '*' && isNumber(childExpr) && childExpr === -1) {
 				simplified.push([1,-1]);
 			} else {
 				simplified.push([coef,childExpr]);
@@ -180,7 +180,7 @@ function flattenExpr(expr) {
 		for (let i = 1; i < expr.length; i++) {
 			let [coef,childExpr] = expr[i];
 			childExpr = flattenExpr(childExpr);
-			if (Array.isArray(childExpr) && expr[0] == childExpr[0]) {
+			if (Array.isArray(childExpr) && expr[0] === childExpr[0]) {
 				flattened.push(...childExpr.slice(1).map(x => [coef*x[0],x[1]]));
 			} else {
 				flattened.push([coef,childExpr]);
@@ -192,12 +192,30 @@ function flattenExpr(expr) {
 	}
 }
 
+function distributeMultiplyByMinusOne(expr) {
+	if (Array.isArray(expr)) {
+		let simplified = [expr[0], ...expr.slice(1).map(x => [x[0],distributeMultiplyByMinusOne(x[1])])];
+		if (simplified[0] === '*') {
+			let sumI = simplified.findIndex(x => Array.isArray(x[1]) && x[1][0] === '+');
+			let minus1s = simplified.filter(x => x[1] === -1);
+			if (sumI !== -1 && minus1s.length > 0) {
+				let sign = (-1) ** minus1s.length;
+				simplified[sumI][1] = [simplified[sumI][1][0], ...simplified[sumI][1].slice(1).map(x => [sign*x[0],x[1]])];
+				simplified = simplified.filter(x => x[1] !== -1);
+			}
+		}
+		return simplified;
+	} else {
+		return expr;
+	}
+}
+
 function exprEquals(a, b) {
-	if (typeof(a) != typeof(b))
+	if (typeof(a) !== typeof(b))
 		return false;
 	if (!Array.isArray(a))
-		return a == b;
-	if (a.length != b.length)
+		return a === b;
+	if (a.length !== b.length)
 		return false;
 	for (let i = 0; i < a.length; i++)
 		if (!exprEquals(a[i], b[i]))
@@ -206,7 +224,7 @@ function exprEquals(a, b) {
 }
 
 function simplifyExprFixpoint(expr) {
-	let expr_ = flattenExpr(simplifyIdentities(simplifyExpr(expr)));
+	let expr_ = distributeMultiplyByMinusOne(flattenExpr(simplifyIdentities(simplifyExpr(expr))));
 	if (exprEquals(expr, expr_)) {
 		return expr;
 	} else {
@@ -223,7 +241,7 @@ function move(eqn, srcSide, srcElem, dstSide) {
 	console.assert(Array.isArray(newEqn[srcSide]));
 
 	let [coef,elem] = newEqn[srcSide].splice(srcElem, 1)[0];
-	if (Array.isArray(newEqn[dstSide]) && newEqn[srcSide][0] == newEqn[dstSide][0]) {
+	if (Array.isArray(newEqn[dstSide]) && newEqn[srcSide][0] === newEqn[dstSide][0]) {
 		newEqn[dstSide].push([-1*coef, elem]);
 	} else {
 		newEqn[dstSide] = [newEqn[srcSide][0], [1, newEqn[dstSide]], [-1*coef, elem]];
@@ -235,7 +253,7 @@ function move(eqn, srcSide, srcElem, dstSide) {
 }
 
 function renderEqn(eqn) {
-	console.assert(eqn[0] == '=');
+	console.assert(eqn[0] === '=');
 	let lhs = renderExpr(eqn[1], 1, 1);
 	let rhs = renderExpr(eqn[2], 1, 2);
 
@@ -247,7 +265,7 @@ function renderEqn(eqn) {
 		side.ondrop = (ev) => {
 			ev.preventDefault();
 			let [srcSide,srcElem] = ev.dataTransfer.getData('text/plain').split(' ').map(x => parseInt(x));
-			if (i != srcSide) {
+			if (i !== srcSide) {
 				setEqn(move(eqn, srcSide, srcElem, i));
 			}
 		};
