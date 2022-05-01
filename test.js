@@ -203,6 +203,17 @@ function distributeMultiplyByMinusOne(expr) {
 				simplified[sumI][1] = [simplified[sumI][1][0], ...simplified[sumI][1].slice(1).map(x => [sign*x[0],x[1]])];
 				simplified = simplified.filter(x => x[1] !== -1);
 			}
+		} else if (simplified[0] === '+') {
+			for (let i = 1; i < simplified.length; i++) {
+				if (Array.isArray(simplified[i][1]) && simplified[i][1][0] === '*') {
+					let minus1s = simplified[i][1].slice(1).filter(x => x[1] === -1);
+					let rest = simplified[i][1].slice(1).filter(x => x[1] !== -1);
+					if (minus1s.length > 0) {
+						let sign = (-1) ** minus1s.length;
+						simplified[i] = [sign*simplified[i][0],['*',...rest]];
+					}
+				}
+			}
 		}
 		return simplified;
 	} else {
