@@ -115,7 +115,14 @@ function renderExpr(expr, level, side) {
 			}
 		}
 	} else {
-		return renderAtom(expr);
+		let e = renderAtom(expr);
+		if (level === 1) {
+			e.draggable = true;
+			e.ondragstart = (ev) => {
+				ev.dataTransfer.setData('text/plain', side);
+			};
+		}
+		return e;
 	}
 }
 
@@ -249,13 +256,16 @@ function simplify(eqn) {
 
 function move(eqn, srcSide, srcElem, dstSide) {
 	let newEqn = structuredClone(eqn);
-	console.assert(Array.isArray(newEqn[srcSide]));
-
-	let [coef,elem] = newEqn[srcSide].splice(srcElem, 1)[0];
-	if (Array.isArray(newEqn[dstSide]) && newEqn[srcSide][0] === newEqn[dstSide][0]) {
-		newEqn[dstSide].push([-1*coef, elem]);
+	if (Array.isArray(newEqn[srcSide])) {
+		let [coef,elem] = newEqn[srcSide].splice(srcElem, 1)[0];
+		if (Array.isArray(newEqn[dstSide]) && newEqn[srcSide][0] === newEqn[dstSide][0]) {
+			newEqn[dstSide].push([-1*coef, elem]);
+		} else {
+			newEqn[dstSide] = [newEqn[srcSide][0], [1, newEqn[dstSide]], [-1*coef, elem]];
+		}
 	} else {
-		newEqn[dstSide] = [newEqn[srcSide][0], [1, newEqn[dstSide]], [-1*coef, elem]];
+		newEqn[dstSide] = ['*', [1,newEqn[dstSide]], [-1,newEqn[srcSide]]];
+		newEqn[srcSide] = 1;
 	}
 
 	newEqn = simplify(newEqn);
