@@ -28,11 +28,17 @@
       margin-top margin-bottom: 10px;
       border-color: black;
   }
-  #eqn {
+  #eqn-box {
       text-align: center;
+  }
+  #eqn-box > button {
+      margin-top: 20px;
   }
 </style>
 
-<div id="eqn"></div>
+<div id="eqn-box">
+  <div id="eqn"></div>
+  <button onclick="swapEqn()">Swap sides</button>
+</div>
 
 <script src="test.js"></script>

@@ -1,4 +1,4 @@
-let sampleEqn = ['=', ['*', [-1, 'd'], [1, ['+', [1, 'a'], [1, ['*', [1, 'x'], [1, 'z']]], [-1, 'f']]]], ['+', [1, 'c'], [1, '5']]];
+let EQN = ['=', ['*', [-1, 'd'], [1, ['+', [1, 'a'], [1, ['*', [1, 'x'], [1, 'z']]], [-1, 'f']]]], ['+', [1, 'c'], [1, '5']]];
 
 const prettyOps = {
 	'+': '&plus;',
@@ -287,7 +287,8 @@ function renderEqn(eqn) {
 			ev.preventDefault();
 			let [srcSide,srcElem] = ev.dataTransfer.getData('text/plain').split(' ').map(x => parseInt(x));
 			if (i !== srcSide) {
-				setEqn(move(eqn, srcSide, srcElem, i));
+				EQN = move(eqn, srcSide, srcElem, i);
+				updateEqn();
 			}
 		};
 	}
@@ -299,14 +300,21 @@ function renderEqn(eqn) {
 	return e;
 }
 
-function setEqn(newEqn) {
+function swapEqn() {
+	let t = EQN[2];
+	EQN[2] = EQN[1];
+	EQN[1] = t;
+	updateEqn();
+}
+
+function updateEqn() {
 	let eqnDiv = document.getElementById('eqn');
 	while (eqnDiv.hasChildNodes()) {
 		eqnDiv.removeChild(eqnDiv.firstChild);
 	}
-	eqnDiv.appendChild(renderEqn(newEqn));	
+	eqnDiv.appendChild(renderEqn(EQN));	
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-	setEqn(sampleEqn);
+	updateEqn();
 });
