@@ -169,6 +169,8 @@ function simplifyIdentities(expr) {
 			childExpr = simplifyIdentities(childExpr);
 			if (expr[0] === '*' && isNumber(childExpr) && childExpr === 1) {
 				// pass
+			} else if (expr[0] === '+' && isNumber(childExpr) && childExpr === 0) {
+				// pass
 			} else if (expr[0] === '*' && isNumber(childExpr) && childExpr === -1) {
 				simplified.push([1,-1]);
 			} else {
