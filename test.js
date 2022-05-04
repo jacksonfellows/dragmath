@@ -266,8 +266,18 @@ function move(eqn, srcSide, srcElem, dstSide) {
 			newEqn[dstSide] = [newEqn[srcSide][0], [1, newEqn[dstSide]], [-1*coef, elem]];
 		}
 	} else {
-		newEqn[dstSide] = ['*', [1,newEqn[dstSide]], [-1,newEqn[srcSide]]];
-		newEqn[srcSide] = 1;
+		if (Array.isArray(newEqn[dstSide])) {
+			if (newEqn[dstSide][0] === '*') {
+				newEqn[dstSide].push([-1,newEqn[srcSide]]);
+				newEqn[srcSide] = 1;
+			} else if (newEqn[dstSide][0] === '+') {
+				newEqn[dstSide].push([-1,newEqn[srcSide]]);
+				newEqn[srcSide] = 0;
+			}
+		} else {
+			newEqn[dstSide] = ['*', [1,newEqn[dstSide]], [-1,newEqn[srcSide]]];
+			newEqn[srcSide] = 1;
+		}
 	}
 
 	newEqn = simplify(newEqn);
